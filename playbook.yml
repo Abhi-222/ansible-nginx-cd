@@ -1,0 +1,46 @@
+---
+- name: Deploy Nginx
+  hosts: webserver
+  become: true
+
+  tasks:
+
+    - name: Install Nginx
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+        update_cache: true
+
+    - name: Ensure Nginx is running
+      ansible.builtin.service:
+        name: nginx
+        state: started
+        enabled: true
+
+    - name: Deploy test page
+      ansible.builtin.copy:
+        content: |
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>Ansible CD POC</title>
+          </head>
+          <body>
+              <h1>Deployment Successful</h1>
+              <p>NGINX deployed using Ansible Continuous Deployment.</p>
+          </body>
+          </html>
+        dest: /var/www/html/index.html
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Validate Nginx configuration
+      ansible.builtin.command:
+        cmd: nginx -t
+      changed_when: false
+
+    - name: Restart Nginx
+      ansible.builtin.service:
+        name: nginx
+        state: restarted
