@@ -21,22 +21,35 @@ pipeline {
                         ansible-playbook \
                         --syntax-check \
                         -i inventory/aws_ec2.yml \
+                        -e ansible_user=ubuntu \
                         playbook.yml
                     '''
                 }
             }
         }
 
-        stage('Test SSH Key') {
+        stage('Test SSH Connection') {
             steps {
-                sshagent(credentials: ['ansible-ssh-key']) {
-                    sh '''
-                        echo "Loaded SSH keys:"
-                        ssh-add -L
+                withCredentials([
+                    string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'aws-secret-key', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    sshagent(credentials: ['ansible-ssh-key']) {
+                        sh '''
+                            export AWS_DEFAULT_REGION=ap-south-1
 
-                        echo "Testing SSH:"
-                        ssh -o StrictHostKeyChecking=no ubuntu@3.110.135.3 "hostname"
-                    '''
+                            echo "Loaded SSH keys:"
+                            ssh-add -L
+
+                            echo "Testing Ansible SSH connection..."
+
+                            ansible \
+                            -i inventory/aws_ec2.yml \
+                            -e ansible_user=ubuntu \
+                            webserver \
+                            -m ping
+                        '''
+                    }
                 }
             }
         }
@@ -53,6 +66,7 @@ pipeline {
 
                             ansible-playbook \
                             -i inventory/aws_ec2.yml \
+                            -e ansible_user=ubuntu \
                             playbook.yml
                         '''
                     }
@@ -70,14 +84,20 @@ pipeline {
                         sh '''
                             export AWS_DEFAULT_REGION=ap-south-1
 
+                            echo "Checking Nginx service..."
+
                             ansible \
                             -i inventory/aws_ec2.yml \
+                            -e ansible_user=ubuntu \
                             webserver \
                             -m shell \
                             -a "systemctl is-active nginx"
 
+                            echo "Checking deployed webpage..."
+
                             ansible \
                             -i inventory/aws_ec2.yml \
+                            -e ansible_user=ubuntu \
                             webserver \
                             -m shell \
                             -a "curl -s http://localhost"
