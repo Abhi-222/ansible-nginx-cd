@@ -9,16 +9,22 @@ pipeline {
             }
         }
 
-        stage('Ansible Syntax Check') {
-            steps {
-                sh '''
-                    ansible-playbook \
-                    --syntax-check \
-                    -i inventory/aws_ec2.yml \
-                    playbook.yml
-                '''
-            }
+stage('Ansible Syntax Check') {
+    steps {
+        withCredentials([
+            string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
+            string(credentialsId: 'aws-secret-key', variable: 'AWS_SECRET_ACCESS_KEY')
+        ]) {
+            sh '''
+            
+                ansible-playbook \
+                --syntax-check \
+                -i inventory/aws_ec2.yml \
+                playbook.yml
+            '''
         }
+    }
+}
 
         stage('Continuous Deployment') {
             steps {
