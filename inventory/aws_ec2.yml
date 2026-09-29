@@ -11,3 +11,6 @@ keyed_groups:
   - key: tags.Role
     prefix: ""
     separator: ""
+
+compose:
+  ansible_user: ubuntu
