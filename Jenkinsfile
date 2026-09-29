@@ -27,6 +27,20 @@ pipeline {
             }
         }
 
+        stage('Test SSH Key') {
+            steps {
+                sshagent(credentials: ['ansible-ssh-key']) {
+                    sh '''
+                        echo "Loaded SSH keys:"
+                        ssh-add -L
+
+                        echo "Testing SSH:"
+                        ssh -o StrictHostKeyChecking=no ubuntu@3.110.135.3 "hostname"
+                    '''
+                }
+            }
+        }
+
         stage('Continuous Deployment') {
             steps {
                 withCredentials([
